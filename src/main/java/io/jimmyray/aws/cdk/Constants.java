@@ -1,15 +1,19 @@
 package io.jimmyray.aws.cdk;
 
 public enum Constants {
-    VPC_CIDR("10.0.0.0/20"),
-    VPC_ID("cdk-vpc"),
+    DEPLOYMENT_IMAGE("public.ecr.aws/r2l1x4g2/go-http-server:v0.1.0-23ffe0a715"),
+    EKS_ADMIN_ROLE("EksClusterAdminRole"),
+    EKS_DEFAULT_CAPACITY("3"),
     EKS_ID("cdk-eks"),
     EKS_INSTANCE_TYPE("m5.large"),
-    EKS_ADMIN_ROLE("EksClusterAdminRole"),
+    EKS_SECRETS_KEY("<KMS_KEY_ARN>"),
+    EKS_STACK("EksStack"),
+    NOT_FOUND("not-found"),
     STACK_ACCOUNT("<ACCOUNT>"),
-    STACK_REGION("us-east-1"),
-    VPC_STACK("VpcStack"),
-    EKS_STACK("EksStack");
+    STACK_REGION("us-east-2"),
+    SUBNET_BITS("23"),
+    VPC_CIDR("10.0.0.0/20"),
+    VPC_ID("cdk-vpc");
 
     private String value;
 
@@ -19,5 +23,9 @@ public enum Constants {
 
     public String getValue() {
         return value;
+    }
+
+    public int getIntValue() {
+        return Integer.parseInt(value);
     }
 }

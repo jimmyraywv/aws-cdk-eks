@@ -1,19 +1,25 @@
 package io.jimmyray.aws.cdk;
 
+import io.jimmyray.aws.cdk.manifests.ReadOnlyDeployment;
+import io.jimmyray.aws.cdk.manifests.ReadOnlyNamespace;
+import io.jimmyray.aws.cdk.manifests.ReadOnlyService;
+import io.jimmyray.aws.cdk.manifests.Yamls;
+import io.jimmyray.utils.Config;
+import io.jimmyray.utils.Strings;
+import io.jimmyray.utils.YamlParser;
 import software.amazon.awscdk.core.Construct;
 import software.amazon.awscdk.core.Stack;
 import software.amazon.awscdk.core.StackProps;
 import software.amazon.awscdk.services.ec2.*;
 import software.amazon.awscdk.services.eks.*;
-import software.amazon.awscdk.services.iam.AccountRootPrincipal;
-import software.amazon.awscdk.services.iam.CompositePrincipal;
-import software.amazon.awscdk.services.iam.Role;
+import software.amazon.awscdk.services.iam.*;
+import software.amazon.awscdk.services.kms.IKey;
+import software.amazon.awscdk.services.kms.Key;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.Arrays.asList;
+import java.util.Properties;
 
 public class EksStack extends Stack {
     public EksStack(final Construct scope, final String id) {
@@ -23,6 +29,9 @@ public class EksStack extends Stack {
     public EksStack(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
 
+        // Get properties object
+        final Properties properties = Config.properties;
+
         /*
         VPC Subnet Configs
          */
@@ -31,38 +40,69 @@ public class EksStack extends Stack {
         subnets.add(SubnetConfiguration.builder()
                 .subnetType(SubnetType.PUBLIC)
                 .name("public")
-                .cidrMask(23)
+                .cidrMask(Strings.getPropertyInt("subnet.bits", properties, Constants.SUBNET_BITS.getIntValue()))
                 .reserved(false)
                 .build());
 
         subnets.add(SubnetConfiguration.builder()
                 .subnetType(SubnetType.PRIVATE)
                 .name("private")
-                .cidrMask(23)
+                .cidrMask(Strings.getPropertyInt("subnet.bits", properties, Constants.SUBNET_BITS.getIntValue()))
                 .reserved(false)
                 .build());
 
         /*
         EKS Cluster and VPC
          */
-        Role role = Role.Builder.create(this, Constants.EKS_ADMIN_ROLE.getValue())
-                .roleName(Constants.EKS_ADMIN_ROLE.getValue())
+        IKey secretsKey = Key.fromKeyArn(this, "EksSecretsKey", Strings.getPropertyString("eks.secrets.key.arn",
+                properties,
+                Constants.EKS_SECRETS_KEY.getValue()));
+
+        // Gather policies for node role
+        List<IManagedPolicy> policies = new ArrayList<>();
+        policies.add(ManagedPolicy.fromManagedPolicyArn(this, "node-policy",
+                Strings.getPropertyString("iam.policy.arn.eks.node", properties, Constants.NOT_FOUND.getValue())));
+        policies.add(ManagedPolicy.fromManagedPolicyArn(this, "cni-policy",
+                Strings.getPropertyString("iam.policy.arn.eks.cni", properties, Constants.NOT_FOUND.getValue())));
+        policies.add(ManagedPolicy.fromManagedPolicyArn(this, "registry-policy",
+                Strings.getPropertyString("iam.policy.arn.ecr.read", properties, Constants.NOT_FOUND.getValue())));
+        policies.add(ManagedPolicy.fromManagedPolicyArn(this, "autoscaler-policy",
+                Strings.getPropertyString("iam.policy.arn.eks.node.autoscaler", properties, Constants.NOT_FOUND.getValue())));
+        policies.add(ManagedPolicy.fromManagedPolicyArn(this, "ssm-policy",
+                Strings.getPropertyString("iam.policy.arn.ssm.core", properties, Constants.NOT_FOUND.getValue())));
+        policies.add(ManagedPolicy.fromManagedPolicyArn(this, "kms-policy",
+                Strings.getPropertyString("iam.policy.arn.kms.ssm.use", properties, Constants.NOT_FOUND.getValue())));
+
+        String adminRole = Strings.getPropertyString("eks.admin.role",
+                properties,
+                Constants.EKS_ADMIN_ROLE.getValue());
+        Role role = Role.Builder.create(this, adminRole)
+                .roleName(adminRole)
                 .assumedBy(new CompositePrincipal(new AccountRootPrincipal()))
+                .managedPolicies(policies)
                 .build();
 
-        /*@NotNull IVpc vpc = Vpc.fromLookup(this, "vpcLookup", VpcLookupOptions.builder()
-                .vpcName(Constants.VPC_STACK + "/" + Constants.VPC_ID).build());*/
+        String eksId = Strings.getPropertyString("eks.id",
+                properties,
+                Constants.EKS_ID.getValue());
 
-        Cluster cluster = Cluster.Builder.create(this, Constants.EKS_ID.getValue())
-                .clusterName(Constants.EKS_ID.getValue())
-                .defaultCapacity(3)
-                .defaultCapacityInstance(new InstanceType(Constants.EKS_INSTANCE_TYPE.getValue()))
+        Cluster cluster = Cluster.Builder.create(this, eksId)
+                .clusterName(eksId)
+                .defaultCapacity(Strings.getPropertyInt("eks.capacity", properties, Constants.EKS_DEFAULT_CAPACITY.getIntValue()))
+                .defaultCapacityInstance(new InstanceType(Strings.getPropertyString("eks.instance.type",
+                        properties,
+                        Constants.EKS_INSTANCE_TYPE.getValue())))
                 .defaultCapacityType(DefaultCapacityType.NODEGROUP)
                 .endpointAccess(EndpointAccess.PUBLIC_AND_PRIVATE)
                 .mastersRole(role)
                 .version(KubernetesVersion.V1_19)
-                .vpc(Vpc.Builder.create(this, Constants.VPC_ID.getValue())
-                        .cidr(Constants.VPC_CIDR.getValue())
+                .secretsEncryptionKey(secretsKey)
+                .vpc(Vpc.Builder.create(this, Strings.getPropertyString("vpc.id",
+                        properties,
+                        Constants.VPC_ID.getValue()))
+                        .cidr(Strings.getPropertyString("vpc.cidr",
+                                properties,
+                                Constants.VPC_CIDR.getValue()))
                         .defaultInstanceTenancy(DefaultInstanceTenancy.DEFAULT)
                         .enableDnsHostnames(true)
                         .enableDnsSupport(true)
@@ -74,16 +114,27 @@ public class EksStack extends Stack {
                         .build())
                 .build();
 
+        /*
+        Multiple k8s manifests, with dependencies, should be in the same KubernetesManifest object
+         */
+        /*KubernetesManifest.Builder.create(this, "read-only")
+                .cluster(cluster)
+                .manifest((List<? extends Map<String, ? extends Object>>) List.of(ReadOnlyNamespace.manifest,
+                        ReadOnlyDeployment.manifest, ReadOnlyService.manifest))
+                .overwrite(true)
+                //.prune(true)
+                .build();*/
+
+        /*
+        Multiple k8s manifests, with dependencies, should be in the same KubernetesManifest object
+         */
         KubernetesManifest.Builder.create(this, "read-only")
                 .cluster(cluster)
-                .manifest(asList(
-                        Map.of("apiVersion", "v1",
-                                "kind", "Namespace",
-                                "metadata", Map.of("name", "read-only")
-                        )
-                ))
+                .manifest((List<? extends Map<String, ? extends Object>>) List.of(YamlParser.parse(Yamls.namespace),
+                        YamlParser.parse(Yamls.deployment), YamlParser.parse(Yamls.service)))
                 .overwrite(true)
                 //.prune(true)
                 .build();
+
     }
 }

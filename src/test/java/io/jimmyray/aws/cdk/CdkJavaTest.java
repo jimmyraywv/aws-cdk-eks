@@ -17,7 +17,7 @@ public class CdkJavaTest {
     @Test
     public void testStack() throws IOException {
         App app = new App();
-        VpcStack stack = new EksStack(app, "test");
+        EksStack stack = new EksStack(app, "test");
 
         // synthesize the stack to a CloudFormation template and compare against
         // a checked-in JSON file.

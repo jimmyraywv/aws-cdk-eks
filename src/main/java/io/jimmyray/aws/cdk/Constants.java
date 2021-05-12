@@ -3,7 +3,7 @@ package io.jimmyray.aws.cdk;
 public enum Constants {
     DEPLOYMENT_IMAGE("public.ecr.aws/r2l1x4g2/go-http-server:v0.1.0-23ffe0a715"),
     EKS_ADMIN_ROLE("EksClusterAdminRole"),
-    EKS_DEFAULT_CAPACITY("3"),
+    EKS_DEFAULT_CAPACITY("0"),
     EKS_ID("cdk-eks"),
     EKS_INSTANCE_TYPE("m5.large"),
     EKS_SECRETS_KEY("<KMS_KEY_ARN>"),

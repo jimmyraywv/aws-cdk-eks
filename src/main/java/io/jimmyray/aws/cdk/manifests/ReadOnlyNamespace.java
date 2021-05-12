@@ -4,7 +4,6 @@ import io.jimmyray.aws.cdk.Constants;
 import io.jimmyray.utils.Config;
 import io.jimmyray.utils.Strings;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 

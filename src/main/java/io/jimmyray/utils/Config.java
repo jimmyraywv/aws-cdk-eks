@@ -5,9 +5,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
+/**
+ * Static config properties access point
+ */
 public final class Config  {
     private static final String propertiesFile = "config.properties";
-    public static Properties properties;
+    public static final Properties properties;
 
     static {
         // create a reader object on the properties file

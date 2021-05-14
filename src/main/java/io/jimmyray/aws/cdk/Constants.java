@@ -1,5 +1,8 @@
 package io.jimmyray.aws.cdk;
 
+/**
+ * Constants with helper methods
+ */
 public enum Constants {
     DEPLOYMENT_IMAGE("public.ecr.aws/r2l1x4g2/go-http-server:v0.1.0-23ffe0a715"),
     EKS_ADMIN_ROLE("EksClusterAdminRole"),
@@ -21,10 +24,18 @@ public enum Constants {
         this.value = value;
     }
 
+    /**
+     * String values
+     * @return
+     */
     public String getValue() {
         return value;
     }
 
+    /**
+     * Int values
+     * @return
+     */
     public int getIntValue() {
         return Integer.parseInt(value);
     }

@@ -28,7 +28,7 @@ public final class WebRetriever {
     }
 
     /**
-     * Get raw file from GitHub
+     * Get raw file from web
      * @param in
      * @return
      * @throws IOException

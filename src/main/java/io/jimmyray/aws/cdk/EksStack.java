@@ -118,15 +118,20 @@ public class EksStack extends Stack {
                 .assumedBy(new ServicePrincipal(Strings.getPropertyString("ec2.service.name", properties, "")))
                 .build();
 
+        /*
+         * Build Nodegroup
+         */
         Nodegroup.Builder.create(this, "ng1")
                 .cluster(cluster)
-                //.releaseVersion(KubernetesVersion.V1_19.getVersion())
                 .amiType(NodegroupAmiType.AL2_X86_64)
                 .capacityType(CapacityType.ON_DEMAND)
                 .desiredSize(3)
                 .maxSize(5)
                 .minSize(3)
                 .diskSize(100)
+                .labels(Map.of("node-group","ng1","instance-type",Strings.getPropertyString("eks.instance.type",
+                        properties,
+                        Constants.EKS_INSTANCE_TYPE.getValue())))
                 .remoteAccess(NodegroupRemoteAccess.builder()
                         .sshKeyName(Strings.getPropertyString("ssh.key.name",
                         properties, "")).build())
@@ -153,7 +158,7 @@ public class EksStack extends Stack {
          */
         KubernetesManifest.Builder.create(this, "read-only")
                 .cluster(cluster)
-                .manifest((List<? extends Map<String, ? extends Object>>) List.of(YamlParser.parse(Yamls.namespace),
+                .manifest(List.of(YamlParser.parse(Yamls.namespace),
                         YamlParser.parse(Yamls.deployment), YamlParser.parse(Yamls.service)))
                 .overwrite(true)
                 .build();

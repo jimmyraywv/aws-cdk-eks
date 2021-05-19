@@ -1,5 +1,6 @@
 package io.jimmyray.aws.cdk;
 
+import io.jimmyray.aws.cdk.helm.Values;
 import io.jimmyray.aws.cdk.manifests.Yamls;
 import io.jimmyray.utils.Config;
 import io.jimmyray.utils.Strings;
@@ -21,11 +22,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static io.jimmyray.aws.cdk.helm.Values.*;
+
+/**
+ * CDK EKS Stack
+ */
 public class EksStack extends Stack {
     public EksStack(final Construct scope, final String id) {
         this(scope, id, null);
     }
 
+    /**
+     * Entrypoint
+     * @param scope
+     * @param id
+     * @param props
+     */
     public EksStack(final Construct scope, final String id, final StackProps props) {
         super(scope, id, props);
 
@@ -193,5 +205,14 @@ public class EksStack extends Stack {
                     .overwrite(true)
                     .build();
         }
+
+        HelmChart.Builder.create(this, "readonly")
+                .cluster(cluster)
+                .chart("readonly-go-http")
+                .repository("https://git-helm.jimmyray.io")
+                .values(YamlParser.parse(readonlyValues))
+                .createNamespace(false)
+                .version("0.1.0")
+                .build();
     }
 }

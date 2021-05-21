@@ -87,6 +87,8 @@ public final class Yamls {
                 app: read-only
                 owner: jimmy
                 env: dev
+              annotations:
+                service.beta.kubernetes.io/load-balancer-source-ranges: <REMOTE_ACCESS_CIDRS>
             spec:
               ports:
                 - port: 80

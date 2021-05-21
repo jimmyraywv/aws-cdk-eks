@@ -14,6 +14,7 @@ public final class Values {
               targetPort: 8080
               labels: {owner: "jimmy", env: "dev", app: "readonly"}
               selector: {app: "readonly"}
+              annotations: {service.beta.kubernetes.io/load-balancer-source-ranges: "10.0.0.1/32,192.168.0.1/32"}
                         
             deployment:
               name: readonly

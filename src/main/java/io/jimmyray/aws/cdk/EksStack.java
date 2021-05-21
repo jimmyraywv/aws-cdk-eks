@@ -1,6 +1,5 @@
 package io.jimmyray.aws.cdk;
 
-import io.jimmyray.aws.cdk.helm.Values;
 import io.jimmyray.aws.cdk.manifests.Yamls;
 import io.jimmyray.utils.Config;
 import io.jimmyray.utils.Strings;
@@ -22,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static io.jimmyray.aws.cdk.helm.Values.*;
+import static io.jimmyray.aws.cdk.helm.Values.readonlyValues;
 
 /**
  * CDK EKS Stack
@@ -34,6 +33,7 @@ public class EksStack extends Stack {
 
     /**
      * Entrypoint
+     *
      * @param scope
      * @param id
      * @param props
@@ -141,12 +141,12 @@ public class EksStack extends Stack {
                 .maxSize(5)
                 .minSize(3)
                 .diskSize(100)
-                .labels(Map.of("node-group","ng1","instance-type",Strings.getPropertyString("eks.instance.type",
+                .labels(Map.of("node-group", "ng1", "instance-type", Strings.getPropertyString("eks.instance.type",
                         properties,
                         Constants.EKS_INSTANCE_TYPE.getValue())))
                 .remoteAccess(NodegroupRemoteAccess.builder()
                         .sshKeyName(Strings.getPropertyString("ssh.key.name",
-                        properties, "")).build())
+                                properties, "")).build())
                 .nodegroupName("ng1")
                 .instanceTypes(List.of(new InstanceType(Strings.getPropertyString("eks.instance.type",
                         properties,
@@ -171,7 +171,9 @@ public class EksStack extends Stack {
         KubernetesManifest.Builder.create(this, "read-only")
                 .cluster(cluster)
                 .manifest(List.of(YamlParser.parse(Yamls.namespace),
-                        YamlParser.parse(Yamls.deployment), YamlParser.parse(Yamls.service)))
+                        YamlParser.parse(Yamls.deployment),
+                        YamlParser.parse(Yamls.service.replace("<REMOTE_ACCESS_CIDRS>",
+                                Strings.getPropertyString("remote.access.cidrs", properties, "")))))
                 .overwrite(true)
                 .build();
 
@@ -208,11 +210,11 @@ public class EksStack extends Stack {
 
         HelmChart.Builder.create(this, "readonly")
                 .cluster(cluster)
-                .chart("readonly-go-http")
-                .repository("https://git-helm.jimmyray.io")
+                .chart(Strings.getPropertyString("helm.chart.name", properties, ""))
+                .version(Strings.getPropertyString("helm.chart.version", properties, ""))
+                .repository(Strings.getPropertyString("helm.repo.url", properties, ""))
                 .values(YamlParser.parse(readonlyValues))
                 .createNamespace(false)
-                .version("0.1.0")
                 .build();
     }
 }

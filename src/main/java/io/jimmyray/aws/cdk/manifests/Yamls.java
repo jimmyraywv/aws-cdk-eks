@@ -189,7 +189,7 @@ public final class Yamls {
                   hostPID: true
                   restartPolicy: Always
                   initContainers:
-                  - image: jicowan/ssm-agent-installer:1.2
+                  - image: public.ecr.aws/q2t9z9u5/ssm-agent-installer:1.2
                     name: ssm-agent-installer
                     securityContext:
                       privileged: true
@@ -213,4 +213,5 @@ public final class Yamls {
                       allowPrivilegeEscalation: false
                       runAsUser: 1000
                       readOnlyRootFilesystem: true""";
+
 }

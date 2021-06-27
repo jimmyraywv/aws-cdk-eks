@@ -6,9 +6,7 @@ import io.jimmyray.utils.Strings;
 import io.jimmyray.utils.WebRetriever;
 import io.jimmyray.utils.YamlParser;
 import org.jetbrains.annotations.NotNull;
-import software.amazon.awscdk.core.Construct;
-import software.amazon.awscdk.core.Stack;
-import software.amazon.awscdk.core.StackProps;
+import software.amazon.awscdk.core.*;
 import software.amazon.awscdk.services.ec2.*;
 import software.amazon.awscdk.services.eks.*;
 import software.amazon.awscdk.services.iam.*;
@@ -28,7 +26,7 @@ import static io.jimmyray.aws.cdk.helm.Values.readonlyValues;
  */
 public class EksStack extends Stack {
     public EksStack(final Construct scope, final String id) {
-        this(scope, id, null);
+        this(scope, id, null, null);
     }
 
     /**
@@ -38,49 +36,15 @@ public class EksStack extends Stack {
      * @param id
      * @param props
      */
-    public EksStack(final Construct scope, final String id, final StackProps props) {
+    public EksStack(final Construct scope, final String id, final StackProps props, IVpc vpc) {
         super(scope, id, props);
 
         // Get properties object
         final Properties properties = Config.properties;
 
-        /*
-        VPC Subnet Configs
-         */
-        List<SubnetConfiguration> subnets = new ArrayList<>();
-
-        subnets.add(SubnetConfiguration.builder()
-                .subnetType(SubnetType.PUBLIC)
-                .name("public")
-                .cidrMask(Strings.getPropertyInt("subnet.bits", properties, Constants.SUBNET_BITS.getIntValue()))
-                .reserved(false)
-                .build());
-
-        subnets.add(SubnetConfiguration.builder()
-                .subnetType(SubnetType.PRIVATE)
-                .name("private")
-                .cidrMask(Strings.getPropertyInt("subnet.bits", properties, Constants.SUBNET_BITS.getIntValue()))
-                .reserved(false)
-                .build());
-
-        /*
-         * VPC
-         */
-        IVpc vpc = Vpc.Builder.create(this, Strings.getPropertyString("vpc.id",
-                properties,
-                Constants.VPC_ID.getValue()))
-                .cidr(Strings.getPropertyString("vpc.cidr",
-                        properties,
-                        Constants.VPC_CIDR.getValue()))
-                .defaultInstanceTenancy(DefaultInstanceTenancy.DEFAULT)
-                .enableDnsHostnames(true)
-                .enableDnsSupport(true)
-                .subnetConfiguration(subnets)
-                .maxAzs(3)
-                .natGateways(3)
-                .natGatewayProvider(NatProvider.gateway())
-                .natGatewaySubnets(SubnetSelection.builder().subnetType(SubnetType.PUBLIC).build())
-                .build();
+        Tags.of(scope).add("owner", properties.getProperty("labels.owner"));
+        Tags.of(scope).add("env", properties.getProperty("labels.env"));
+        Tags.of(scope).add("app", properties.getProperty("labels.app"));
 
         /*
         EKS Cluster
@@ -109,6 +73,10 @@ public class EksStack extends Stack {
                 .vpc(vpc)
                 .build();
 
+        Tags.of(cluster).add("owner", properties.getProperty("labels.owner"));
+        Tags.of(cluster).add("env", properties.getProperty("labels.env"));
+        Tags.of(cluster).add("app", properties.getProperty("labels.app"));
+
         // Gather policies for node role
         List<IManagedPolicy> policies = new ArrayList<>();
         policies.add(ManagedPolicy.fromManagedPolicyArn(this, "node-policy",
@@ -133,8 +101,10 @@ public class EksStack extends Stack {
         /*
          * Build Nodegroup
          */
-        Nodegroup.Builder.create(this, "ng1")
+        Nodegroup nodegroup = Nodegroup.Builder.create(this, "ng1")
                 .cluster(cluster)
+                //.launchTemplateSpec(LaunchTemplateSpec.builder().id("cdk-eks-launch-template").build())
+                .tags(Map.of("owner","jimmy","env","dev","app","read-only"))
                 .amiType(NodegroupAmiType.AL2_X86_64)
                 .capacityType(CapacityType.ON_DEMAND)
                 .desiredSize(3)
@@ -154,6 +124,11 @@ public class EksStack extends Stack {
                 .subnets(SubnetSelection.builder().subnets(cluster.getVpc().getPrivateSubnets()).build())
                 .nodeRole(nodeRole)
                 .build();
+
+        Tags.of(nodegroup).add("name", "ng1-node");
+        Tags.of(nodegroup).add("owner", properties.getProperty("labels.owner"));
+        Tags.of(nodegroup).add("env", properties.getProperty("labels.env"));
+        Tags.of(nodegroup).add("app", properties.getProperty("labels.app"));
 
         /*
         Multiple k8s manifests, with dependencies, should be in the same KubernetesManifest object

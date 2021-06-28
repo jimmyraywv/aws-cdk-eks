@@ -11,6 +11,7 @@ public enum Constants {
     EKS_INSTANCE_TYPE("m5.large"),
     EKS_SECRETS_KEY("<KMS_KEY_ARN>"),
     EKS_STACK("EksStack"),
+    K8S_APPS_STACK("K8sAppsStack"),
     NOT_FOUND("not-found"),
     STACK_ACCOUNT("<ACCOUNT>"),
     STACK_REGION("us-east-2"),

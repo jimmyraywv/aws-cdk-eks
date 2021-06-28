@@ -6,6 +6,7 @@ import software.amazon.awscdk.core.App;
 import software.amazon.awscdk.core.Environment;
 import software.amazon.awscdk.core.StackProps;
 import software.amazon.awscdk.services.ec2.IVpc;
+import software.amazon.awscdk.services.eks.Cluster;
 
 import java.util.Properties;
 
@@ -32,9 +33,15 @@ public class CdkJavaApp {
 
         IVpc vpc = vpcStack.getVpc();
 
-        new EksStack(app, Strings.getPropertyString("eks.stack",
+        EksStack eksStack = new EksStack(app, Strings.getPropertyString("eks.stack",
                 properties,
                 Constants.EKS_STACK.getValue()), props, vpc);
+
+        Cluster cluster = eksStack.getCluster();
+
+        new K8sAppsStack(app, Strings.getPropertyString("k8s.apps.stack",
+                properties,
+                Constants.K8S_APPS_STACK.getValue()), props, cluster);
 
         app.synth();
     }

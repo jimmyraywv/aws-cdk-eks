@@ -1,10 +1,7 @@
 package io.jimmyray.aws.cdk;
 
-import io.jimmyray.aws.cdk.manifests.Yamls;
 import io.jimmyray.utils.Config;
 import io.jimmyray.utils.Strings;
-import io.jimmyray.utils.WebRetriever;
-import io.jimmyray.utils.YamlParser;
 import org.jetbrains.annotations.NotNull;
 import software.amazon.awscdk.core.*;
 import software.amazon.awscdk.services.ec2.*;
@@ -13,13 +10,10 @@ import software.amazon.awscdk.services.iam.*;
 import software.amazon.awscdk.services.kms.IKey;
 import software.amazon.awscdk.services.kms.Key;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import static io.jimmyray.aws.cdk.helm.Values.readonlyValues;
 
 /**
  * CDK EKS Stack

@@ -13,3 +13,4 @@ cdk.context.json
 .cdk.staging
 *.out
 
+work.txt

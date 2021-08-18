@@ -1,6 +1,4 @@
-ARG ALPINE_VERSION=3.13
-ARG AWS_CDK_VERSION=1.118.0
-FROM alpine:${ALPINE_VERSION}
+FROM alpine:3.14.1
 
 ENV SOURCE_DIR=/
 COPY . $SOURCE_DIR
@@ -21,7 +19,7 @@ RUN apk -v --no-cache --update add \
         git \
         && \
     update-ca-certificates && \
-    npm install -g aws-cdk@${AWS_CDK_VERSION}
+    npm install -g aws-cdk
 
 # VOLUME [ "/root/.aws" ]
 # VOLUME [ "/opt/app" ]

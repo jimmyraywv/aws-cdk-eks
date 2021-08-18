@@ -64,7 +64,7 @@ public class EksStack extends Stack {
                 .defaultCapacity(Strings.getPropertyInt("eks.default.capacity", properties, Constants.EKS_DEFAULT_CAPACITY.getIntValue()))
                 .endpointAccess(EndpointAccess.PUBLIC_AND_PRIVATE)
                 .mastersRole(admin)
-                .version(KubernetesVersion.V1_19)
+                .version(KubernetesVersion.V1_21)
                 .secretsEncryptionKey(secretsKey)
                 .vpc(vpc)
                 .build();

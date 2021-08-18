@@ -96,6 +96,7 @@ public class K8sAppsStack extends Stack {
                     .build();
         }
 
+        /* Helm */
         HelmChart.Builder.create(this, "readonly")
                 .cluster(cluster)
                 .chart(Strings.getPropertyString("helm.chart.name", properties, ""))

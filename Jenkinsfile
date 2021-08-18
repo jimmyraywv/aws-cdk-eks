@@ -9,7 +9,7 @@ pipeline {
     disableConcurrentBuilds()
     parallelsAlwaysFailFast()
     timestamps()
-    withCredentials(awsCredentials)
+    // withCredentials(awsCredentials)
   }
 
   stages {

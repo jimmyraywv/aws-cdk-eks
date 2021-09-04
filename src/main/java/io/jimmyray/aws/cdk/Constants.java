@@ -16,7 +16,7 @@ public enum Constants {
     STACK_ACCOUNT("<ACCOUNT>"),
     STACK_REGION("us-east-2"),
     SUBNET_BITS("23"),
-    VPC_CIDR("10.0.0.0/20"),
+    VPC_CIDR("192.168.0.0/20"),
     VPC_ID("cdk-vpc"),
     VPC_STACK("VpcStack");
 
